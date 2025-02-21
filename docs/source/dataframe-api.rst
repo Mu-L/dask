@@ -1,9 +1,9 @@
-API
----
+Dask DataFrame API with Logical Query Planning
+==============================================
 
 .. currentmodule:: dask.dataframe
 
-Dataframe
+DataFrame
 ~~~~~~~~~
 
 .. autosummary::
@@ -15,9 +15,7 @@ Dataframe
     DataFrame.align
     DataFrame.all
     DataFrame.any
-    DataFrame.append
     DataFrame.apply
-    DataFrame.applymap
     DataFrame.assign
     DataFrame.astype
     DataFrame.bfill
@@ -36,6 +34,7 @@ Dataframe
     DataFrame.diff
     DataFrame.div
     DataFrame.divide
+    DataFrame.divisions
     DataFrame.drop
     DataFrame.drop_duplicates
     DataFrame.dropna
@@ -45,7 +44,6 @@ Dataframe
     DataFrame.explode
     DataFrame.ffill
     DataFrame.fillna
-    DataFrame.first
     DataFrame.floordiv
     DataFrame.ge
     DataFrame.get_partition
@@ -65,7 +63,6 @@ Dataframe
     DataFrame.itertuples
     DataFrame.join
     DataFrame.known_divisions
-    DataFrame.last
     DataFrame.le
     DataFrame.loc
     DataFrame.lt
@@ -89,6 +86,7 @@ Dataframe
     DataFrame.npartitions
     DataFrame.nsmallest
     DataFrame.partitions
+    DataFrame.persist
     DataFrame.pivot_table
     DataFrame.pop
     DataFrame.pow
@@ -99,6 +97,7 @@ Dataframe
     DataFrame.random_split
     DataFrame.rdiv
     DataFrame.rename
+    DataFrame.rename_axis
     DataFrame.repartition
     DataFrame.replace
     DataFrame.resample
@@ -123,6 +122,7 @@ Dataframe
     DataFrame.sub
     DataFrame.sum
     DataFrame.tail
+    DataFrame.to_backend
     DataFrame.to_bag
     DataFrame.to_csv
     DataFrame.to_dask_array
@@ -152,7 +152,6 @@ Series
    Series.align
    Series.all
    Series.any
-   Series.append
    Series.apply
    Series.astype
    Series.autocorr
@@ -160,8 +159,6 @@ Series
    Series.bfill
    Series.clear_divisions
    Series.clip
-   Series.clip_lower
-   Series.clip_upper
    Series.compute
    Series.copy
    Series.corr
@@ -181,7 +178,6 @@ Series
    Series.explode
    Series.ffill
    Series.fillna
-   Series.first
    Series.floordiv
    Series.ge
    Series.get_partition
@@ -193,9 +189,7 @@ Series
    Series.isin
    Series.isna
    Series.isnull
-   Series.iteritems
    Series.known_divisions
-   Series.last
    Series.le
    Series.loc
    Series.lt
@@ -228,7 +222,6 @@ Series
    Series.radd
    Series.random_split
    Series.rdiv
-   Series.reduction
    Series.repartition
    Series.replace
    Series.rename
@@ -244,6 +237,7 @@ Series
    Series.std
    Series.sub
    Series.sum
+   Series.to_backend
    Series.to_bag
    Series.to_csv
    Series.to_dask_array
@@ -260,6 +254,115 @@ Series
    Series.visualize
    Series.where
 
+Index
+~~~~~~
+
+.. autosummary::
+   :toctree: generated/
+
+   Index
+   Index.add
+   Index.align
+   Index.all
+   Index.any
+   Index.apply
+   Index.astype
+   Index.autocorr
+   Index.between
+   Index.bfill
+   Index.clear_divisions
+   Index.clip
+   Index.compute
+   Index.copy
+   Index.corr
+   Index.count
+   Index.cov
+   Index.cummax
+   Index.cummin
+   Index.cumprod
+   Index.cumsum
+   Index.describe
+   Index.diff
+   Index.div
+   Index.drop_duplicates
+   Index.dropna
+   Index.dtype
+   Index.eq
+   Index.explode
+   Index.ffill
+   Index.fillna
+   Index.floordiv
+   Index.ge
+   Index.get_partition
+   Index.groupby
+   Index.gt
+   Index.head
+   Index.is_monotonic_decreasing
+   Index.is_monotonic_increasing
+   Index.isin
+   Index.isna
+   Index.isnull
+   Index.known_divisions
+   Index.le
+   Index.loc
+   Index.lt
+   Index.map
+   Index.map_overlap
+   Index.map_partitions
+   Index.mask
+   Index.max
+   Index.median
+   Index.median_approximate
+   Index.memory_usage
+   Index.memory_usage_per_partition
+   Index.min
+   Index.mod
+   Index.mul
+   Index.nbytes
+   Index.ndim
+   Index.ne
+   Index.nlargest
+   Index.notnull
+   Index.nsmallest
+   Index.nunique
+   Index.nunique_approx
+   Index.persist
+   Index.pipe
+   Index.pow
+   Index.quantile
+   Index.radd
+   Index.random_split
+   Index.rdiv
+   Index.rename
+   Index.repartition
+   Index.replace
+   Index.resample
+   Index.reset_index
+   Index.rolling
+   Index.round
+   Index.sample
+   Index.sem
+   Index.shape
+   Index.shift
+   Index.size
+   Index.sub
+   Index.to_backend
+   Index.to_bag
+   Index.to_csv
+   Index.to_dask_array
+   Index.to_delayed
+   Index.to_frame
+   Index.to_hdf
+   Index.to_series
+   Index.to_string
+   Index.to_timestamp
+   Index.truediv
+   Index.unique
+   Index.value_counts
+   Index.values
+   Index.visualize
+   Index.where
+   Index.to_frame
 
 Accessors
 ~~~~~~~~~
@@ -405,7 +508,7 @@ Categorical Accessor
 Groupby Operations
 ~~~~~~~~~~~~~~~~~~
 
-.. currentmodule:: dask.dataframe.groupby
+.. currentmodule:: dask.dataframe.api
 
 DataFrame Groupby
 *****************
@@ -413,30 +516,30 @@ DataFrame Groupby
 .. autosummary::
    :toctree: generated/
 
-   DataFrameGroupBy.aggregate
-   DataFrameGroupBy.apply
-   DataFrameGroupBy.bfill
-   DataFrameGroupBy.count
-   DataFrameGroupBy.cumcount
-   DataFrameGroupBy.cumprod
-   DataFrameGroupBy.cumsum
-   DataFrameGroupBy.fillna
-   DataFrameGroupBy.ffill
-   DataFrameGroupBy.get_group
-   DataFrameGroupBy.max
-   DataFrameGroupBy.mean
-   DataFrameGroupBy.min
-   DataFrameGroupBy.size
-   DataFrameGroupBy.std
-   DataFrameGroupBy.sum
-   DataFrameGroupBy.var
-   DataFrameGroupBy.cov
-   DataFrameGroupBy.corr
-   DataFrameGroupBy.first
-   DataFrameGroupBy.last
-   DataFrameGroupBy.idxmin
-   DataFrameGroupBy.idxmax
-   DataFrameGroupBy.rolling
+   GroupBy.aggregate
+   GroupBy.apply
+   GroupBy.bfill
+   GroupBy.count
+   GroupBy.cumcount
+   GroupBy.cumprod
+   GroupBy.cumsum
+   GroupBy.ffill
+   GroupBy.get_group
+   GroupBy.max
+   GroupBy.mean
+   GroupBy.min
+   GroupBy.size
+   GroupBy.std
+   GroupBy.sum
+   GroupBy.var
+   GroupBy.cov
+   GroupBy.corr
+   GroupBy.first
+   GroupBy.last
+   GroupBy.idxmin
+   GroupBy.idxmax
+   GroupBy.rolling
+   GroupBy.transform
 
 
 Series Groupby
@@ -452,7 +555,6 @@ Series Groupby
    SeriesGroupBy.cumcount
    SeriesGroupBy.cumprod
    SeriesGroupBy.cumsum
-   SeriesGroupBy.fillna
    SeriesGroupBy.ffill
    SeriesGroupBy.get_group
    SeriesGroupBy.max
@@ -468,9 +570,12 @@ Series Groupby
    SeriesGroupBy.idxmin
    SeriesGroupBy.idxmax
    SeriesGroupBy.rolling
+   SeriesGroupBy.transform
 
 Custom Aggregation
 ******************
+
+.. currentmodule:: dask.dataframe
 
 .. autosummary::
    :toctree: generated/
@@ -480,16 +585,13 @@ Custom Aggregation
 Rolling Operations
 ~~~~~~~~~~~~~~~~~~
 
-.. currentmodule:: dask.dataframe
-
 .. autosummary::
    :toctree: generated/
 
-   rolling.map_overlap
    Series.rolling
    DataFrame.rolling
 
-.. currentmodule:: dask.dataframe.rolling
+.. currentmodule:: dask.dataframe.api
 
 .. autosummary::
    :toctree: generated/
@@ -533,13 +635,6 @@ Create DataFrames
    from_pandas
    DataFrame.from_dict
 
-.. currentmodule:: dask.bag
-
-.. autosummary::
-   :toctree: generated/
-
-   Bag.to_dataframe
-
 Store DataFrames
 ~~~~~~~~~~~~~~~~
 
@@ -568,7 +663,7 @@ Convert DataFrames
 Reshape DataFrames
 ~~~~~~~~~~~~~~~~~~
 
-.. currentmodule:: dask.dataframe.reshape
+.. currentmodule:: dask.dataframe
 
 .. autosummary::
    :toctree: generated/
@@ -580,7 +675,7 @@ Reshape DataFrames
 Concatenate DataFrames
 ~~~~~~~~~~~~~~~~~~~~~~
 
-.. currentmodule:: dask.dataframe.multi
+.. currentmodule:: dask.dataframe
 
 .. autosummary::
    :toctree: generated/
@@ -629,6 +724,19 @@ Dask Metadata
 
    make_meta
 
+
+Query Planning and Optimization
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. currentmodule:: dask.dataframe
+
+.. autosummary::
+   :toctree: generated/
+
+   DataFrame.explain
+   DataFrame.visualize
+   DataFrame.analyze
+
 Other functions
 ~~~~~~~~~~~~~~~
 
@@ -639,6 +747,7 @@ Other functions
 
    compute
    map_partitions
+   map_overlap
 
    to_datetime
    to_numeric

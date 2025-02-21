@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import io
 import os
 import shlex
@@ -8,7 +10,6 @@ from contextlib import contextmanager
 from functools import partial
 
 import pytest
-from packaging.version import parse as parse_version
 
 s3fs = pytest.importorskip("s3fs")
 boto3 = pytest.importorskip("boto3")
@@ -78,6 +79,9 @@ def s3_base():
     with ensure_safe_environment_variables():
         os.environ["AWS_ACCESS_KEY_ID"] = "foobar_key"
         os.environ["AWS_SECRET_ACCESS_KEY"] = "foobar_secret"
+        # Ignore any local AWS credentials/config files as they can interfere with moto
+        os.environ["AWS_SHARED_CREDENTIALS_FILE"] = ""
+        os.environ["AWS_CONFIG_FILE"] = ""
 
         # pipe to null to avoid logging in terminal
         proc = subprocess.Popen(
@@ -133,7 +137,6 @@ def s3_context(bucket=test_bucket_name, files=files):
 
 
 @pytest.fixture()
-@pytest.mark.slow
 def s3_with_yellow_tripdata(s3):
     """
     Fixture with sample yellowtrip CSVs loaded into S3.
@@ -377,7 +380,7 @@ def test_read_bytes_delimited(s3, blocksize, s3so):
 
 @pytest.mark.parametrize(
     "fmt,blocksize",
-    [(fmt, None) for fmt in compr] + [(fmt, 10) for fmt in compr],  # type: ignore
+    [(fmt, None) for fmt in compr] + [(fmt, 10) for fmt in compr],
 )
 def test_compression(s3, fmt, blocksize, s3so):
     if fmt not in compress:
@@ -435,28 +438,21 @@ def test_modification_time_read_bytes(s3, s3so):
     assert [aa._key for aa in concat(a)] != [cc._key for cc in concat(c)]
 
 
-@pytest.mark.parametrize("engine", ["pyarrow", "fastparquet"])
+@pytest.fixture(params=["pyarrow"])
+def engine(request):
+    pytest.importorskip(request.param)
+
+    return request.param
+
+
+@pytest.mark.filterwarnings("ignore:Dask annotations")
 @pytest.mark.parametrize("metadata_file", [True, False])
 def test_parquet(s3, engine, s3so, metadata_file):
-    import s3fs
-
     dd = pytest.importorskip("dask.dataframe")
     pd = pytest.importorskip("pandas")
     np = pytest.importorskip("numpy")
 
-    lib = pytest.importorskip(engine)
-    lib_version = parse_version(lib.__version__)
-    if engine == "pyarrow" and lib_version < parse_version("0.13.1"):
-        pytest.skip("pyarrow < 0.13.1 not supported for parquet")
-    if (
-        engine == "pyarrow"
-        and lib_version.major == 2
-        and parse_version(s3fs.__version__) > parse_version("0.5.0")
-    ):
-        pytest.skip("#7056 - new s3fs not supported before pyarrow 3.0")
-
     url = "s3://%s/test.parquet" % test_bucket_name
-
     data = pd.DataFrame(
         {
             "i32": np.arange(1000, dtype=np.int32),
@@ -489,7 +485,6 @@ def test_parquet(s3, engine, s3so, metadata_file):
     # Check that `open_file_options` arguments are
     # really passed through to fsspec
     if fsspec_parquet:
-
         # Passing `open_file_options` kwargs will fail
         # if you set an unsupported engine
         with pytest.raises(ValueError):
@@ -548,9 +543,7 @@ def test_parquet(s3, engine, s3so, metadata_file):
     dd.utils.assert_eq(data, df4)
 
 
-@pytest.mark.parametrize("engine", ["pyarrow", "fastparquet"])
 def test_parquet_append(s3, engine, s3so):
-    pytest.importorskip(engine)
     dd = pytest.importorskip("dask.dataframe")
     pd = pytest.importorskip("pandas")
     np = pytest.importorskip("numpy")
@@ -603,9 +596,7 @@ def test_parquet_append(s3, engine, s3so):
     )
 
 
-@pytest.mark.parametrize("engine", ["pyarrow", "fastparquet"])
 def test_parquet_wstoragepars(s3, s3so, engine):
-    pytest.importorskip(engine)
     dd = pytest.importorskip("dask.dataframe")
     pd = pytest.importorskip("pandas")
     np = pytest.importorskip("numpy")
@@ -625,18 +616,20 @@ def test_parquet_wstoragepars(s3, s3so, engine):
     dd.read_parquet(
         url,
         engine=engine,
-        storage_options=dict(**s3so, **{"default_fill_cache": False}),
+        storage_options={"default_fill_cache": False, **s3so},
     )
     assert s3.current().default_fill_cache is False
     dd.read_parquet(
-        url, engine=engine, storage_options=dict(**s3so, **{"default_fill_cache": True})
+        url,
+        engine=engine,
+        storage_options={"default_fill_cache": True, **s3so},
     )
     assert s3.current().default_fill_cache is True
 
     dd.read_parquet(
         url,
         engine=engine,
-        storage_options=dict(**s3so, **{"default_block_size": 2**20}),
+        storage_options={"default_block_size": 2**20, **s3so},
     )
     assert s3.current().default_block_size == 2**20
     with s3.current().open(url + "/_metadata") as f:

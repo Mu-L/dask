@@ -1,6 +1,9 @@
+from __future__ import annotations
+
 import warnings
 
 import pytest
+from packaging.version import Version
 
 scipy = pytest.importorskip("scipy")
 import numpy as np
@@ -67,7 +70,15 @@ def test_one(kind):
     [
         ("ttest_ind", {}),
         ("ttest_ind", {"equal_var": False}),
-        ("ttest_1samp", {}),
+        pytest.param(
+            "ttest_1samp",
+            {},
+            marks=pytest.mark.xfail(
+                # NOTE: using nested `Version` calls here to handle night scipy releases
+                Version(Version(scipy.__version__).base_version) >= Version("1.10.0"),
+                reason="https://github.com/dask/dask/issues/9499",
+            ),
+        ),
         ("ttest_rel", {}),
         ("chisquare", {}),
         ("power_divergence", {}),

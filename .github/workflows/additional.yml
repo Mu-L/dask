@@ -8,49 +8,20 @@ defaults:
     shell: bash -l {0}
 
 jobs:
-  mindeps:
-    runs-on: "ubuntu-latest"
-    strategy:
-      matrix:
-        environment: ["mindeps-array", "mindeps-dataframe", "mindeps-non-optional", "mindeps-distributed"]
-
-    steps:
-      - name: Checkout source
-        uses: actions/checkout@v3.1.0
-
-      - name: Setup Conda Environment
-        uses: conda-incubator/setup-miniconda@v2
-        with:
-          miniforge-variant: Mambaforge
-          miniforge-version: latest
-          use-mamba: true
-          channel-priority: strict
-          python-version: "3.8"
-          environment-file: continuous_integration/environment-${{ matrix.environment }}.yaml
-          activate-environment: test-environment
-          auto-activate-base: false
-
-      - name: Install
-        run: source continuous_integration/scripts/install.sh
-
-      - name: Run tests
-        run: source continuous_integration/scripts/run_tests.sh
-
   doctest:
     runs-on: "ubuntu-latest"
+    timeout-minutes: 90
     steps:
       - name: Checkout source
-        uses: actions/checkout@v3.1.0
+        uses: actions/checkout@v4.1.5
 
       - name: Setup Conda Environment
-        uses: conda-incubator/setup-miniconda@v2
+        uses: conda-incubator/setup-miniconda@v3.1.1
         with:
-          miniforge-variant: Mambaforge
           miniforge-version: latest
           use-mamba: true
           channel-priority: strict
-          python-version: "3.9"
-          environment-file: continuous_integration/environment-3.9.yaml
+          environment-file: continuous_integration/environment-3.12.yaml
           activate-environment: test-environment
           auto-activate-base: false
 
@@ -58,26 +29,26 @@ jobs:
         run: source continuous_integration/scripts/install.sh
 
       - name: Run tests
-        run: pytest -v --doctest-modules --ignore-glob='*/test_*.py' dask
+        run: pytest -v --doctest-modules --ignore-glob='*/test_*.py' --ignore='dask/array/_array_expr/' dask
 
   imports:
     runs-on: "ubuntu-latest"
+    timeout-minutes: 90
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.8", "3.9", "3.10"]
+        python-version: ["3.10", "3.11", "3.12"]
     steps:
       - name: Checkout source
-        uses: actions/checkout@v3.1.0
+        uses: actions/checkout@v4.1.5
 
       - name: Setup Conda
-        uses: conda-incubator/setup-miniconda@v2
+        uses: conda-incubator/setup-miniconda@v3.1.1
         with:
-          miniforge-variant: Mambaforge
           miniforge-version: latest
           use-mamba: true
           channel-priority: strict
-          python-version: "3.8"
+          python-version: "3.10"
           activate-environment: test-environment
           auto-activate-base: false
 
