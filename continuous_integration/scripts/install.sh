@@ -1,40 +1,42 @@
 set -xe
 
-# TODO: Add cityhash back
-# We don't have a conda-forge package for cityhash
-# We don't include it in the conda environment.yaml, since that may
-# make things harder for contributors that don't have a C++ compiler
-# python -m pip install --no-deps cityhash
-
 if [[ ${UPSTREAM_DEV} ]]; then
-    # FIXME workaround for https://github.com/mamba-org/mamba/issues/1682
-    arr=($(mamba search --override-channels -c arrow-nightlies pyarrow | tail -n 1))
-    export PYARROW_VERSION=${arr[1]}
-    mamba install -y -c arrow-nightlies "pyarrow=$PYARROW_VERSION"
 
-    # FIXME https://github.com/mamba-org/mamba/issues/412
-    # mamba uninstall --force ...
-    conda uninstall --force numpy pandas fastparquet bokeh scipy
+    # NOTE: `dask/tests/test_ci.py::test_upstream_packages_installed` should up be
+    # updated when packages here are updated.
 
+    # Pick up https://github.com/mamba-org/mamba/pull/2903
+    mamba install -n base 'mamba>=1.5.2'
+
+    mamba uninstall --force bokeh
     mamba install -y -c bokeh/label/dev bokeh
 
-    python -m pip install --no-deps --pre --retries 10 \
-        -i https://pypi.anaconda.org/scipy-wheels-nightly/simple \
-        numpy \
-        pandas \
-        scipy
+    mamba uninstall --force pyarrow pyarrow-core
+    python -m pip install --no-deps \
+        --extra-index-url https://pypi.fury.io/arrow-nightlies/ \
+        --prefer-binary --pre pyarrow
 
     python -m pip install \
         --upgrade \
         locket \
-        git+https://github.com/pydata/sparse \
         git+https://github.com/dask/s3fs \
         git+https://github.com/intake/filesystem_spec \
         git+https://github.com/dask/partd \
         git+https://github.com/dask/zict \
         git+https://github.com/dask/distributed \
-        git+https://github.com/dask/fastparquet \
         git+https://github.com/zarr-developers/zarr-python
+    mamba uninstall --force numpy pandas scipy numexpr numba sparse scikit-image h5py
+    python -m pip install --no-deps --pre --retries 10 \
+        -i https://pypi.anaconda.org/scientific-python-nightly-wheels/simple \
+        numpy \
+        pandas \
+        scipy \
+        scikit-image \
+        h5py
+
+    # Used when automatically opening an issue when the `upstream` CI build fails
+    mamba install pytest-reportlog
+
 fi
 
 # Install dask

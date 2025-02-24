@@ -1,9 +1,11 @@
+from __future__ import annotations
+
 import pickle
 import types
 from collections import namedtuple
 from dataclasses import dataclass, field
 from functools import partial
-from operator import add, matmul, setitem
+from operator import add, setitem
 from random import random
 from typing import NamedTuple
 
@@ -14,6 +16,7 @@ from tlz import merge
 import dask
 import dask.bag as db
 from dask import compute
+from dask.base import collections_to_dsk
 from dask.delayed import Delayed, delayed, to_task_dask
 from dask.highlevelgraph import HighLevelGraph
 from dask.utils_test import inc
@@ -96,7 +99,7 @@ def test_delayed():
 
 def test_delayed_with_namedtuple():
     class ANamedTuple(NamedTuple):
-        a: int
+        a: int  # type: ignore[annotation-unchecked]
 
     literal = dask.delayed(3)
     with_class = dask.delayed({"a": ANamedTuple(a=literal)})
@@ -135,7 +138,7 @@ def test_delayed_with_dataclass(cls):
 def test_delayed_with_dataclass_with_custom_init():
     @dataclass()
     class ADataClass:
-        a: int
+        a: int  # type: ignore[annotation-unchecked]
 
         def __init__(self, b: int):
             self.a = b
@@ -152,7 +155,7 @@ def test_delayed_with_dataclass_with_custom_init():
 def test_delayed_with_dataclass_with_eager_custom_init():
     @dataclass()
     class ADataClass:
-        a: int
+        a: int  # type: ignore[annotation-unchecked]
 
         def __init__(self, b: int):
             self.a = b
@@ -170,8 +173,8 @@ def test_delayed_with_dataclass_with_eager_custom_init():
 def test_delayed_with_eager_dataclass_with_set_init_false_field():
     @dataclass
     class ADataClass:
-        a: int
-        b: int = field(init=False)
+        a: int  # type: ignore[annotation-unchecked]
+        b: int = field(init=False)  # type: ignore[annotation-unchecked]
 
     def prep_dataclass(a):
         data = ADataClass(a=a)
@@ -191,8 +194,8 @@ def test_delayed_with_eager_dataclass_with_set_init_false_field():
 def test_delayed_with_dataclass_with_set_init_false_field():
     @dataclass
     class ADataClass:
-        a: int
-        b: int = field(init=False)
+        a: int  # type: ignore[annotation-unchecked]
+        b: int = field(init=False)  # type: ignore[annotation-unchecked]
 
     literal = dask.delayed(3)
 
@@ -211,8 +214,8 @@ def test_delayed_with_dataclass_with_set_init_false_field():
 def test_delayed_with_dataclass_with_unset_init_false_field():
     @dataclass
     class ADataClass:
-        a: int
-        b: int = field(init=False)
+        a: int  # type: ignore[annotation-unchecked]
+        b: int = field(init=False)  # type: ignore[annotation-unchecked]
 
     literal = dask.delayed(3)
     with_class = delayed({"data": ADataClass(a=literal)})
@@ -239,16 +242,13 @@ def test_operators():
     assert (a > 2).compute()
     assert (a**2).compute() == 100
 
-    if matmul:
+    class dummy:
+        def __matmul__(self, other):
+            return 4
 
-        class dummy:
-            def __matmul__(self, other):
-                return 4
-
-        c = delayed(dummy())  # noqa
-        d = delayed(dummy())  # noqa
-
-        assert (eval("c @ d")).compute() == 4
+    c = delayed(dummy())
+    d = delayed(dummy())
+    assert (c @ d).compute() == 4
 
 
 def test_methods():
@@ -378,17 +378,19 @@ def test_lists_are_concrete():
     assert c.compute() == 20
 
 
-def test_iterators():
+@pytest.mark.parametrize("typ", [list, tuple, set])
+def test_iterators(typ):
     a = delayed(1)
     b = delayed(2)
-    c = delayed(sum)(iter([a, b]))
+    c = delayed(sum)(iter(typ([a, b])))
 
-    assert c.compute() == 3
+    x = c.compute()
+    assert x == 3
 
     def f(seq):
         return sum(seq)
 
-    c = delayed(f)(iter([a, b]))
+    c = delayed(f)(iter(typ([a, b])))
     assert c.compute() == 3
 
 
@@ -570,8 +572,8 @@ def test_array_delayed():
 
 
 def test_array_bag_delayed():
-    da = pytest.importorskip("dask.array")
     np = pytest.importorskip("numpy")
+    da = pytest.importorskip("dask.array")
 
     arr1 = np.arange(100).reshape((10, 10))
     arr2 = arr1.dot(arr1.T)
@@ -648,15 +650,11 @@ def identity(x):
     return x
 
 
-def test_name_consistent_across_instances():
+def test_deterministic_name():
     func = delayed(identity, pure=True)
-
-    data = {"x": 1, "y": 25, "z": [1, 2, 3]}
-    assert func(data)._key == "identity-4f318f3c27b869239e97c3ac07f7201a"
-
-    data = {"x": 1, 1: "x"}
-    assert func(data)._key == func(data)._key
-    assert func(1)._key == "identity-7258833899272585e16d0ec36b21a3de"
+    data1 = {"x": 1, "y": 25, "z": [1, 2, 3]}
+    data2 = {"x": 1, "y": 25, "z": [1, 2, 3]}
+    assert func(data1)._key == func(data2)._key
 
 
 def test_sensitive_to_partials():
@@ -678,6 +676,7 @@ def test_delayed_name():
 
 
 def test_finalize_name():
+    pytest.importorskip("numpy")
     da = pytest.importorskip("dask.array")
 
     x = da.ones(10, chunks=5)
@@ -694,6 +693,7 @@ def test_finalize_name():
 
 
 def test_keys_from_array():
+    pytest.importorskip("numpy")
     da = pytest.importorskip("dask.array")
     from dask.array.utils import _check_dsk
 
@@ -755,6 +755,7 @@ def test_attribute_of_attribute():
 
 
 def test_check_meta_flag():
+    pytest.importorskip("pandas")
     dd = pytest.importorskip("dask.dataframe")
     from pandas import Series
 
@@ -854,3 +855,29 @@ def test_delayed_function_attributes_forwarded():
 
     assert add.__name__ == "add"
     assert add.__doc__ == "This is a docstring"
+    assert add.__wrapped__(1, 2) == 3
+
+
+def test_delayed_fusion():
+    @delayed
+    def test(i):
+        return i + 1
+
+    @delayed
+    def test2(i):
+        return i + 2
+
+    @delayed
+    def test3(i):
+        return i + 3
+
+    obj = test3(test2(test(10)))
+    dsk = dict(collections_to_dsk([obj]))
+    assert len(dsk) == 3
+
+    obj2 = test3(test2(test(10)))
+    with dask.config.set({"optimization.fuse.delayed": True}):
+        dsk2 = dict(collections_to_dsk([obj]))
+        result = dask.compute(obj2)
+    assert len(dsk2) == 2
+    assert dask.compute(obj) == result

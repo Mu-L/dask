@@ -1,25 +1,9 @@
-import sys
+from __future__ import annotations
 
-try:
-    import click
-except ImportError:
-    click = None
+from dask.cli import run_cli
 
 
 def main():
-
-    if click is None:
-        msg = (
-            "The dask command requires click to be installed.\n\n"
-            "Install with conda or pip:\n\n"
-            " conda install click\n"
-            " pip install click\n"
-        )
-        print(msg, file=sys.stderr)
-        return 1
-
-    from dask.cli import run_cli
-
     run_cli()
 
 
